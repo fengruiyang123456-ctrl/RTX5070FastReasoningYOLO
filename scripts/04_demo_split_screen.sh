@@ -17,5 +17,6 @@ if [[ ! -f "$ONNX" ]]; then
   exit 1
 fi
 
-python src/apps/demo_compare.py --baseline torch_fp32 --optimized ort_fp16 \
-  --weights "$WEIGHTS" --onnx "$ONNX"
+python src/apps/demo_compare.py --baseline torch_fp32 --optimized trt_fp32 \
+  --weights "$WEIGHTS" --onnx "$ONNX" \
+  --trt-engine "outputs/trt_engines/yolo_fp32.plan"

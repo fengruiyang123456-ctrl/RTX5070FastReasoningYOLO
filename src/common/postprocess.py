@@ -79,3 +79,46 @@ def postprocess_yolov8(
 
     keep = nms(boxes, scores, iou_thres)
     return boxes[keep], scores[keep], class_ids[keep]
+
+
+def postprocess_yolov8_resize(
+    pred: np.ndarray,
+    conf_thres: float,
+    iou_thres: float,
+    orig_shape: Tuple[int, int],
+    new_shape: Tuple[int, int],
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if pred.ndim == 3:
+        pred = pred[0]
+    if pred.ndim == 2 and pred.shape[0] < pred.shape[1]:
+        if pred.shape[0] in (84, 85):
+            pred = pred.T
+
+    boxes = pred[:, :4]
+    scores_all = pred[:, 4:]
+    class_ids = scores_all.argmax(axis=1)
+    scores = scores_all.max(axis=1)
+
+    keep = scores >= conf_thres
+    boxes = boxes[keep]
+    scores = scores[keep]
+    class_ids = class_ids[keep]
+
+    if len(boxes) == 0:
+        return np.empty((0, 4)), np.empty((0,)), np.empty((0,), dtype=np.int64)
+
+    boxes = xywh_to_xyxy(boxes)
+    h0, w0 = orig_shape
+    new_h, new_w = new_shape
+    gain_w = new_w / w0
+    gain_h = new_h / h0
+    boxes[:, [0, 2]] /= gain_w
+    boxes[:, [1, 3]] /= gain_h
+
+    boxes[:, 0] = np.clip(boxes[:, 0], 0, w0 - 1)
+    boxes[:, 2] = np.clip(boxes[:, 2], 0, w0 - 1)
+    boxes[:, 1] = np.clip(boxes[:, 1], 0, h0 - 1)
+    boxes[:, 3] = np.clip(boxes[:, 3], 0, h0 - 1)
+
+    keep = nms(boxes, scores, iou_thres)
+    return boxes[keep], scores[keep], class_ids[keep]
