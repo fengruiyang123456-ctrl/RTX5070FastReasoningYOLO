@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+outputs/
+weights/*.pt
+weights/*.onnx
+outputs/trt_engines/
+
+assets/videos/
+assets/images/
