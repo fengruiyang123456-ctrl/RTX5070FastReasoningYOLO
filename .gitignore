@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/.venv/
+
+# Generated artifacts
+outputs/
+*.engine
+*.plan
+
+# Local model artifacts
+weights/*.pt
+weights/*.onnx
+weights/*.engine
+weights/*.plan
+
+# IDE
+.idea/
+.vscode/

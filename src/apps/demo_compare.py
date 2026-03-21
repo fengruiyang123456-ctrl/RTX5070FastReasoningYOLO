@@ -1,29 +1,20 @@
 import argparse
-import sys
-from pathlib import Path
 
 import cv2
 import numpy as np
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.append(str(ROOT / "src"))
-
-from backends.ort_fp16 import OrtFP16Backend
-from backends.torch_fp16 import TorchFP16Backend
-from backends.torch_fp32 import TorchFP32Backend
-from backends.torch_fp32_modify import TorchFP32ModifyBackend
-from backends.trt_fp16 import TensorRTBackend
-from backends.trt_fp32 import TensorRTFP32Backend
-from common.config import AppConfig
-from common.timer import Timer
-from common.video_io import iter_frames, open_video
-from common.viz import draw_detections, overlay_metrics
+from src.backends.factory import available_backends, build_backend
+from src.common.config import AppConfig
+from src.common.timer import Timer
+from src.common.video_io import iter_frames, open_video
+from src.common.viz import draw_detections, overlay_metrics
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Split-screen demo comparison")
-    parser.add_argument("--baseline", default="torch_fp32")
-    parser.add_argument("--optimized", default="ort_fp16")
+    backend_choices = sorted(set(available_backends()))
+    parser.add_argument("--baseline", default="torch_fp32", choices=backend_choices)
+    parser.add_argument("--optimized", default="ort_fp16", choices=backend_choices)
     parser.add_argument("--source", default="0", help="camera index or video path")
     parser.add_argument("--weights", default=str(AppConfig().weights_path("yolo.pt")))
     parser.add_argument("--onnx", default=str(AppConfig().weights_path("yolo.onnx")))
@@ -33,22 +24,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--conf", type=float, default=0.25)
     parser.add_argument("--iou", type=float, default=0.45)
     return parser.parse_args()
-
-
-def build_backend(name: str, args: argparse.Namespace):
-    if name == "torch_fp32":
-        return TorchFP32Backend(args.weights, args.device, args.conf, args.iou, args.imgsz)
-    if name == "torch_fp32_modify":
-        return TorchFP32ModifyBackend(args.weights, args.device, args.conf, args.iou, args.imgsz)
-    if name == "torch_fp16":
-        return TorchFP16Backend(args.weights, args.device, args.conf, args.iou, args.imgsz)
-    if name == "ort_fp16":
-        return OrtFP16Backend(args.onnx, args.conf, args.iou, args.imgsz)
-    if name == "trt_fp16":
-        return TensorRTBackend(args.trt_engine, args.conf, args.iou, args.imgsz)
-    if name == "trt_fp32":
-        return TensorRTFP32Backend(args.trt_engine, args.conf, args.iou, args.imgsz)
-    raise ValueError(f"Unknown backend: {name}")
 
 
 def main() -> None:

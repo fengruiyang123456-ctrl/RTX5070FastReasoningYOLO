@@ -1,4 +1,4 @@
-name: project_song
+name: rtx5070_fast_reasoning_yolo
 channels:
   - conda-forge
 dependencies:

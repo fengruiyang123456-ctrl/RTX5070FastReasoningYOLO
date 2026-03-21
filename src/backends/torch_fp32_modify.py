@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from common.postprocess import postprocess_yolov8
+from src.common.postprocess import postprocess_yolov8
 
 try:
     import torch

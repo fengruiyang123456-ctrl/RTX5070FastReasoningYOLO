@@ -3,8 +3,8 @@ from typing import Tuple
 import numpy as np
 import onnxruntime as ort
 
-from common.postprocess import postprocess_yolov8
-from common.preprocess import letterbox, to_tensor
+from src.common.postprocess import postprocess_yolov8
+from src.common.preprocess import letterbox, to_tensor
 
 
 class OrtFP16Backend:

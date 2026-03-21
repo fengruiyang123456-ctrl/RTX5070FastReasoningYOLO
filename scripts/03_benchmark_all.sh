@@ -17,9 +17,9 @@ if [[ ! -f "$ONNX" ]]; then
   exit 1
 fi
 
-python src/apps/benchmark.py --backend torch_fp32 --weights "$WEIGHTS"
-python src/apps/benchmark.py --backend ort_fp16 --onnx "$ONNX"
+python -m src.apps.benchmark --backend torch_fp32 --weights "$WEIGHTS"
+python -m src.apps.benchmark --backend ort_fp16 --onnx "$ONNX"
 
 if [[ -f "outputs/trt_engines/yolo_fp16.plan" ]]; then
-  python src/apps/benchmark.py --backend trt_fp16 --trt-engine "outputs/trt_engines/yolo_fp16.plan"
+  python -m src.apps.benchmark --backend trt_fp16 --trt-engine "outputs/trt_engines/yolo_fp16.plan"
 fi

@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from backends.trt_fp16 import TensorRTBackend
+from src.backends.trt_fp16 import TensorRTBackend
 
 
 class TensorRTFP32Backend(TensorRTBackend):

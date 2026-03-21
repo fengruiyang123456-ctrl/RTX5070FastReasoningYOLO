@@ -5,8 +5,8 @@ from typing import List, Tuple
 import cv2
 import numpy as np
 
-from common.postprocess import postprocess_yolov8, postprocess_yolov8_resize
-from common.preprocess import letterbox, to_tensor
+from src.common.postprocess import postprocess_yolov8, postprocess_yolov8_resize
+from src.common.preprocess import letterbox, to_tensor
 
 try:
     import torch

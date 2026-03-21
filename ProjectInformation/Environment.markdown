@@ -1,108 +1,78 @@
-# Environment Setup (Project_Song)
+# Environment Setup
 
-This document captures the environment configuration used during optimization and TensorRT tests.
-All commands assume Ubuntu 22.04.5 LTS.
+This folder intentionally keeps only two documents:
 
-## System
-- GPU: NVIDIA GeForce RTX 5070 (8 GB)
-- CPU: AMD Ryzen 7 9700X
-- Driver: 580.95.05
-- CUDA Toolkit (nvcc): 11.5
-- GPU Driver CUDA Runtime: 13.0 (reported by `nvidia-smi`)
+- `Environment.markdown`: environment preparation
+- `Run.markdown`: exact run commands
 
-## System Packages (TensorRT)
-TensorRT installed from NVIDIA CUDA repo (system-level):
-- TensorRT: 10.14.1.48-1+cuda13.0
-- tensorrt-dev: provides `trtexec`
+## Local Python Environment
 
-Install (if missing):
-```
-sudo apt-get update
-sudo apt-get install -y tensorrt tensorrt-dev python3-libnvinfer python3-libnvinfer-dev
-```
+Recommended host environment:
 
-`trtexec` path:
-```
-/usr/src/tensorrt/bin/trtexec
+- Ubuntu 22.04
+- Python 3.10
+- NVIDIA GPU with a working CUDA driver
+- Optional: TensorRT installed on the host if you want to run TRT backends
+
+Install system packages:
+
+```bash
+sudo apt update
+sudo apt install -y \
+  python3 python3-venv python3-pip \
+  ffmpeg libgl1 libglib2.0-0
 ```
 
-## Python Environment (runtime)
-Conda environment for runtime:
-- Name: rtx5070
-- Python: 3.10
-- Torch: 2.9.1+cu128
-- Ultralytics: 8.3.x
-- onnxruntime-gpu
-- OpenCV
+Create a virtual environment:
 
-Create/activate:
-```
-conda create -n rtx5070 python=3.10 -y
-conda activate rtx5070
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
-pip install ultralytics onnx onnxruntime-gpu opencv-python numpy pandas
-pip install pycuda
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+pip install -r env/requirements.txt
 ```
 
-Verify TensorRT Python binding:
-```
-python - <<'PY'
-import tensorrt as trt
-print("TensorRT:", trt.__version__)
-PY
+Prepare model files:
+
+```bash
+cp /path/to/your/yolo.pt weights/yolo.pt
+bash scripts/02_export_onnx.sh
 ```
 
-## Python Environment (ONNX export, optional clean env)
-If you want a clean export environment to avoid protobuf conflicts:
-```
-conda create -n yolo_export python=3.10 -y
-conda activate yolo_export
-pip install ultralytics onnx onnxsim "protobuf<5,>=4.21"
+Notes:
+
+- `weights/yolo.pt` and `weights/yolo.onnx` must be real files before running benchmarks
+- TensorRT is not installed by the Docker image below; TRT execution is expected on a host that already has TensorRT installed
+
+## Docker Environment
+
+The repository includes:
+
+- `Dockerfile`
+- `docker-compose.yml`
+- `.dockerignore`
+
+Build the image:
+
+```bash
+docker compose build
 ```
 
-Export FP32 ONNX:
-```
-python - <<'PY'
-from ultralytics import YOLO
-model = YOLO("/home/fry/projects/Project_Song/weights/yolo.pt")
-model.export(format="onnx", imgsz=640, dynamic=False, half=False, simplify=True, opset=17)
-PY
+Open an interactive container:
+
+```bash
+docker compose run --rm app bash
 ```
 
-## TensorRT Engine Generation
-FP32 engine:
-```
-/usr/src/tensorrt/bin/trtexec \
-  --onnx=/home/fry/projects/Project_Song/weights/yolo.onnx \
-  --saveEngine=/home/fry/projects/Project_Song/outputs/trt_engines/yolo_fp32.plan \
-  --memPoolSize=workspace:4096
+Inside the container, Python dependencies are already installed during image build. You only need to place model files under `weights/`.
+
+Verify GPU access inside the container:
+
+```bash
+python -c "import torch; print(torch.cuda.is_available())"
 ```
 
-FP16 engine (if needed):
-```
-/usr/src/tensorrt/bin/trtexec \
-  --onnx=/home/fry/projects/Project_Song/weights/yolo.onnx \
-  --saveEngine=/home/fry/projects/Project_Song/outputs/trt_engines/yolo_fp16.plan \
-  --fp16 --memPoolSize=workspace:4096
-```
+Notes:
 
-## Runtime Commands
-Split-screen demo (FP32 TRT by default):
-```
-cd /home/fry/projects/Project_Song
-bash scripts/04_demo_split_screen.sh
-```
-
-Enable GPU preprocessing in TRT backend:
-```
-TRT_GPU_PREPROC=1 bash scripts/04_demo_split_screen.sh
-```
-
-Enable per-stage timing:
-```
-TRT_PROFILE=1 TRT_PROFILE_EVERY=30 bash scripts/04_demo_split_screen.sh
-```
-
-## Notes
-- `tensorrt` is installed system-wide; Python bindings are accessed from the runtime env.
-- If `trtexec` is not found in PATH, use `/usr/src/tensorrt/bin/trtexec`.
+- The Docker workflow is intended for PyTorch and ONNX Runtime benchmarking
+- TensorRT is intentionally not wired into the container in this version to keep the setup easier to reproduce

@@ -1,0 +1,11 @@
+.git
+.gitignore
+.venv
+__pycache__/
+*.py[cod]
+outputs/
+weights/*.pt
+weights/*.onnx
+weights/*.engine
+weights/*.plan
+ProjectInformation/
